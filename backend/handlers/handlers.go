@@ -10,10 +10,6 @@ import (
 	ws "github.com/gorilla/websocket"
 )
 
-type UsernamePostBody struct {
-	Username string `json:"username"`
-}
-
 func Username(c *chat.Chat) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -28,21 +24,21 @@ func Username(c *chat.Chat) http.HandlerFunc {
 		defer r.Body.Close()
 
 		d := json.NewDecoder(r.Body)
-		var body UsernamePostBody
+		var body map[string]string
 		if err := d.Decode(&body); err != nil {
 			http.Error(
 				w,
-				"No userame provided in post body",
+				"Couldn't decode request body",
 				http.StatusBadRequest,
 			)
 			return
 		}
 
-		username := body.Username
+		username := body["username"]
 		if username == "" {
 			http.Error(
 				w,
-				"Username can't be empty",
+				"No non-empty username provided in post body",
 				http.StatusBadRequest,
 			)
 			return

@@ -1,0 +1,41 @@
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- <link -->
+    <!--   rel="stylesheet" -->
+    <!--   href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" -->
+    <!-- /> -->
+    <title>Chat</title>
+    <script src="./static/index.js" type="module"></script>
+  </head>
+  <body class="text-center space-y-4 p-8">
+    <div class="flex flex-col items-center space-y-4">
+      <h1 class="text-4xl font-bold">Welcome to chat</h1>
+      <h2 class="text-xl">Choose a username</h2>
+      <form id="usernameForm" class="mx-auto form-control">
+        <div class="join">
+          <input
+            type="text"
+            placeholder="Username..."
+            autocomplete="off"
+            maxlength="25"
+            required
+            id="usernameInput"
+            class="input input-bordered join-item"
+          />
+          <button id="usernameBtn" class="btn join-item">Submit</button>
+        </div>
+        <div class="label">
+          <span id="usernameError" class="label-text-alt text-error" />
+        </div>
+      </form>
+    </div>
+  </body>
+</html>

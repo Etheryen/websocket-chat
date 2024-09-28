@@ -10,13 +10,6 @@ import (
 	ws "github.com/gorilla/websocket"
 )
 
-// func HomeHandler(w http.ResponseWriter, r *http.Request) {
-// 	tmpl := template.Must(template.ParseFiles("views/index.html"))
-// 	if err := tmpl.Execute(w, nil); err != nil {
-// 		panic(err)
-// 	}
-// }
-
 type UsernamePostBody struct {
 	Username string `json:"username"`
 }

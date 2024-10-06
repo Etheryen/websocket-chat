@@ -18,26 +18,34 @@ export function UsernameForm({ setFinalUsername }: UsernameFormProps) {
     setIsSubmitting(true);
 
     // TODO: handle prod and docker url
-    const response = await fetch("http://localhost:8080/username", {
-      method: "POST",
-      body: JSON.stringify({ username }),
-      headers: { "Content-type": "application/json" },
-    });
+    let text = "";
+    try {
+      const response = await fetch("http://localhost:8080/username", {
+        method: "POST",
+        body: JSON.stringify({ username }),
+        headers: { "Content-type": "application/json" },
+      });
+      text = await response.text();
 
-    if (response.ok) {
-      setFinalUsername(username);
-      return;
+      if (response.ok) {
+        setFinalUsername(username);
+        return;
+      }
+
+      setIsSubmitting(false);
+      setError(text);
+    } catch (e) {
+      console.error(e);
+      setIsSubmitting(false);
+      setError(text);
     }
-
-    setIsSubmitting(false);
-    setError(await response.text());
   };
 
   return (
     <div className="flex flex-col items-center space-y-4">
       <h1 className="text-4xl font-bold">Welcome to chat</h1>
       <h2 className="text-xl">Choose a username</h2>
-      <form onSubmit={handleSubmit} className="mx-auto form-control">
+      <form onSubmit={handleSubmit} className="form-control mx-auto">
         <div className="join">
           <input
             type="text"
@@ -48,7 +56,7 @@ export function UsernameForm({ setFinalUsername }: UsernameFormProps) {
             disabled={isSubmitting}
             onChange={(ev) => setUsername(ev.target.value)}
             value={username}
-            className="input input-bordered join-item"
+            className="input join-item input-bordered"
           />
           <button disabled={isSubmitting} className="btn join-item">
             Submit

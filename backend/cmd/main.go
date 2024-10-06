@@ -8,7 +8,6 @@ import (
 	"net/http"
 )
 
-// TODO: dockerize
 func main() {
 	c := chat.New()
 
@@ -17,10 +16,12 @@ func main() {
 		http.StripPrefix("/static/", http.FileServer(http.Dir("static"))),
 	)
 
-	// http.HandleFunc("GET /", handlers.HomeHandler)
-	http.HandleFunc("/username", handlers.Username(c))
-	http.HandleFunc("/ws", handlers.WsEndpoint(c))
+	mw := handlers.CorsMiddleware
 
-	fmt.Println("Listening at: http://localhost:8080")
+	// TODO: only allow allowed methods (maybe use echo or chi)
+	http.HandleFunc("/username", mw(handlers.Username(c)))
+	http.HandleFunc("/ws", mw(handlers.WsEndpoint(c)))
+
+	fmt.Println("Listening at port :8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }

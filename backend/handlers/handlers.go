@@ -10,7 +10,7 @@ import (
 	ws "github.com/gorilla/websocket"
 )
 
-func Username(c *chat.Chat) http.HandlerFunc {
+func CorsMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
@@ -21,6 +21,12 @@ func Username(c *chat.Chat) http.HandlerFunc {
 			return
 		}
 
+		next(w, r)
+	}
+}
+
+func Username(c *chat.Chat) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 
 		d := json.NewDecoder(r.Body)
@@ -65,15 +71,6 @@ var upgrader = ws.Upgrader{
 
 func WsEndpoint(c *chat.Chat) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-
-		if r.Method == http.MethodOptions {
-			w.WriteHeader(http.StatusNoContent)
-			return
-		}
-
 		username := r.URL.Query().Get("username")
 		if strings.TrimSpace(username) == "" {
 			http.Error(

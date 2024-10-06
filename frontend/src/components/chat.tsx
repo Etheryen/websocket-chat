@@ -12,8 +12,6 @@ export function Chat({ username }: ChatProps) {
   const [message, setMessage] = useState("");
 
   const onMessage = (newMessage: Message) => {
-    console.log({ newMessage });
-
     switch (newMessage.kind) {
       case "text":
         setMessages((messages) => [...messages, newMessage.data]);
@@ -38,8 +36,8 @@ export function Chat({ username }: ChatProps) {
   return (
     <>
       {/* In a hidden part of your component or JSX */}
-      <div className="chat chat-end chat-start" style={{ display: "none" }} />
-      <div className="text-center space-y-4">
+      <div className="chat chat-start chat-end" style={{ display: "none" }} />
+      <div className="space-y-4 text-center">
         <h1 className="text-4xl font-bold">Welcome to chat</h1>
         <h2 className="text-xl">State: {state}</h2>
         <h2 className="text-xl">Your username: {username}</h2>
@@ -63,7 +61,7 @@ export function Chat({ username }: ChatProps) {
       </div>
       <form
         onSubmit={handleSend}
-        className="pt-4 join text-center mx-auto block"
+        className="join mx-auto block pt-4 text-center"
       >
         <input
           type="text"
@@ -73,7 +71,7 @@ export function Chat({ username }: ChatProps) {
           required
           onChange={(ev) => setMessage(ev.target.value)}
           value={message}
-          className="input input-bordered join-item"
+          className="input join-item input-bordered"
         />
         <button className="btn join-item">Send</button>
       </form>

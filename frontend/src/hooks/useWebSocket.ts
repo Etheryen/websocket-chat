@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Message, State } from "~/types/types";
 
 interface UseWebSocketArgs {
@@ -17,48 +17,15 @@ export const useWebSocket = ({ url, onMessage }: UseWebSocketArgs) => {
       conn?.current?.send(text);
       return;
     }
-    console.error("WebSocket is not connected. Unable to send message.");
   };
-
-  // TODO: fix warning
-  const connect = (url: string) => {
-    if (state === "connected" || conn.current) return;
-
-    console.log("CONNECTING");
-    setState("connecting");
-    conn.current = new WebSocket(url);
-
-    conn.current.onopen = () => {
-      reconnectAttempts.current = 0;
-      setState("connected");
-    };
-
-    conn.current.onmessage = (ev: MessageEvent<string>) => {
-      const msg = JSON.parse(ev.data);
-      onMessage(msg);
-    };
-
-    conn.current.onclose = async () => {
-      await handleDisconnect();
-    };
-
-    conn.current.onerror = async () => {
-      await handleDisconnect();
-    };
-  };
-
-  useEffect(() => {
-    connect(url);
-  }, [url, connect]);
 
   const getReconnectDelay = () => {
     return Math.min(1000 * 2 ** reconnectAttempts.current, 30000); // Cap the delay to 30 seconds
   };
 
-  const handleDisconnect = async () => {
+  // TODO: fix reconnecting
+  const handleDisconnect = useCallback(async () => {
     if (state == "reconnecting") return;
-
-    // TODO: fix reconnecting
 
     if (reconnectAttempts.current < MAX_RECONNECT_ATTEMPTS) {
       setState("reconnecting");
@@ -70,7 +37,39 @@ export const useWebSocket = ({ url, onMessage }: UseWebSocketArgs) => {
         "Max reconnection attempts reached. WebSocket is disconnected.",
       );
     }
-  };
+  }, [state]);
+
+  const connect = useCallback(
+    (url: string) => {
+      if (state === "connected" || conn.current) return;
+
+      setState("connecting");
+      conn.current = new WebSocket(url);
+
+      conn.current.onopen = () => {
+        reconnectAttempts.current = 0;
+        setState("connected");
+      };
+
+      conn.current.onmessage = (ev: MessageEvent<string>) => {
+        const msg = JSON.parse(ev.data);
+        onMessage(msg);
+      };
+
+      conn.current.onclose = async () => {
+        await handleDisconnect();
+      };
+
+      conn.current.onerror = async () => {
+        await handleDisconnect();
+      };
+    },
+    [handleDisconnect, onMessage, state],
+  );
+
+  useEffect(() => {
+    connect(url);
+  }, [url, connect]);
 
   return { state, send };
 };

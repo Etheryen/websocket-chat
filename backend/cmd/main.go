@@ -4,24 +4,28 @@ import (
 	"fmt"
 	"go-ws/chat"
 	"go-ws/handlers"
+	"go-ws/server"
 	"log"
 	"net/http"
+
+	ws "github.com/gorilla/websocket"
 )
 
+var upgrader = &ws.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+	CheckOrigin:     func(r *http.Request) bool { return true },
+}
+
 func main() {
-	c := chat.New()
+	s := server.New(chat.New(), upgrader)
 
-	http.Handle(
-		"/static/",
-		http.StripPrefix("/static/", http.FileServer(http.Dir("static"))),
-	)
+	s.Use(handlers.CorsMiddleware)
 
-	mw := handlers.CorsMiddleware
-
-	// TODO: only allow allowed methods (maybe use echo or chi)
-	http.HandleFunc("/username", mw(handlers.Username(c)))
-	http.HandleFunc("/ws", mw(handlers.WsEndpoint(c)))
+	s.Get("/api/users", handlers.GetUsers(s.Chat))
+	s.Post("/api/username", handlers.PostUsername(s.Chat))
+	s.Get("/api/ws", handlers.WsEndpoint(s.Chat, s.Upgrader))
 
 	fmt.Println("Listening at port :8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Fatal(s.Listen(":8080"))
 }

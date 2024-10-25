@@ -10,52 +10,45 @@ import (
 	ws "github.com/gorilla/websocket"
 )
 
-func CorsMiddleware(next http.HandlerFunc) http.HandlerFunc {
+func GetUsers(c *chat.Chat) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-
-		if r.Method == http.MethodOptions {
-			w.WriteHeader(http.StatusNoContent)
+		users := c.GetActiveUsers()
+		usersJson, err := json.Marshal(users)
+		if err != nil {
+			err := "Couldn't encode users"
+			http.Error(w, err, http.StatusInternalServerError)
 			return
 		}
 
-		next(w, r)
+		if _, err = w.Write(usersJson); err != nil {
+			err := "Couldn't write response"
+			http.Error(w, err, http.StatusInternalServerError)
+		}
 	}
 }
 
-func Username(c *chat.Chat) http.HandlerFunc {
+func PostUsername(c *chat.Chat) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 
 		d := json.NewDecoder(r.Body)
 		var body map[string]string
 		if err := d.Decode(&body); err != nil {
-			http.Error(
-				w,
-				"Couldn't decode request body",
-				http.StatusBadRequest,
-			)
+			err := "Couldn't decode request body"
+			http.Error(w, err, http.StatusBadRequest)
 			return
 		}
 
 		username := body["username"]
 		if username == "" {
-			http.Error(
-				w,
-				"No non-empty username provided in post body",
-				http.StatusBadRequest,
-			)
+			err := "No non-empty username provided in post body"
+			http.Error(w, err, http.StatusBadRequest)
 			return
 		}
 
 		if c.IsUsernameTaken(username) {
-			http.Error(
-				w,
-				"Username is taken",
-				http.StatusBadRequest,
-			)
+			err := "Username is taken"
+			http.Error(w, err, http.StatusBadRequest)
 			return
 		}
 
@@ -63,31 +56,19 @@ func Username(c *chat.Chat) http.HandlerFunc {
 	}
 }
 
-var upgrader = ws.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-	CheckOrigin:     func(r *http.Request) bool { return true },
-}
-
-func WsEndpoint(c *chat.Chat) http.HandlerFunc {
+func WsEndpoint(c *chat.Chat, upgrader *ws.Upgrader) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		username := r.URL.Query().Get("username")
 		if strings.TrimSpace(username) == "" {
-			http.Error(
-				w,
-				"No userame provided in query param",
-				http.StatusBadRequest,
-			)
+			err := "No userame provided in query param"
+			http.Error(w, err, http.StatusBadRequest)
 			return
 		}
 
 		if c.IsUsernameTaken(username) {
-			log.Println("USER EXISTS")
-			http.Error(
-				w,
-				"Username is taken",
-				http.StatusBadRequest,
-			)
+			log.Println("User exists:", username)
+			err := "Username is taken"
+			http.Error(w, err, http.StatusBadRequest)
 			return
 		}
 

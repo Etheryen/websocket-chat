@@ -1,5 +1,8 @@
-import { FormEvent, useState } from "react";
-import { useWebSocket } from "~/hooks/useWebSocket";
+"use client";
+
+import { FormEvent, useEffect, useRef, useState } from "react";
+import useWebSocket, { ReadyState } from "react-use-websocket";
+import { getWsUrl } from "~/api/url";
 import { Message, TextMessage } from "~/types/types";
 
 interface ChatProps {
@@ -11,35 +14,57 @@ export function Chat({ username }: ChatProps) {
   const [messages, setMessages] = useState<TextMessage[]>([]);
   const [message, setMessage] = useState("");
 
-  const onMessage = (newMessage: Message) => {
-    switch (newMessage.kind) {
+  const onMessage = (ev: MessageEvent) => {
+    const msg = JSON.parse(ev.data) as Message;
+
+    switch (msg.kind) {
       case "text":
-        setMessages((messages) => [...messages, newMessage.data]);
+        setMessages((messages) => [...messages, msg.data]);
         break;
       case "users":
-        setUsers(newMessage.data);
+        setUsers(msg.data);
         break;
     }
   };
 
-  // TODO: handle url prod and all
-  const url = `ws://localhost:8080/ws?username=${username}`;
-  const { send, state } = useWebSocket({ url, onMessage });
+  const didUnmount = useRef(false);
+  useEffect(() => {
+    return () => {
+      didUnmount.current = true;
+    };
+  }, []);
+
+  const url = `${getWsUrl()}/api/ws?username=${username}`;
+  const { readyState, sendMessage } = useWebSocket(url, {
+    onMessage,
+    retryOnError: true,
+    shouldReconnect: () => didUnmount.current === false,
+    queryParams: { username },
+  });
 
   const handleSend = (ev: FormEvent) => {
     ev.preventDefault();
-    if (state != "connected") return;
-    send(message);
+    if (readyState != ReadyState.OPEN) return;
+
+    sendMessage(message);
     setMessage("");
   };
 
+  const connectionStatus = {
+    [ReadyState.CONNECTING]: "connecting...",
+    [ReadyState.OPEN]: "connected",
+    [ReadyState.CLOSING]: "closing...",
+    [ReadyState.CLOSED]: "closed",
+    [ReadyState.UNINSTANTIATED]: "uninstantiated",
+  }[readyState];
   return (
-    <>
+    <main className="p-4">
+      {/* TODO: wtf is that under me */}
       {/* In a hidden part of your component or JSX */}
       <div className="chat chat-start chat-end" style={{ display: "none" }} />
       <div className="space-y-4 text-center">
         <h1 className="text-4xl font-bold">Welcome to chat</h1>
-        <h2 className="text-xl">State: {state}</h2>
+        <h2 className="text-xl">Status: {connectionStatus}</h2>
         <h2 className="text-xl">Your username: {username}</h2>
         <h2 className="text-lg">Active users:</h2>
         <ul>
@@ -75,6 +100,6 @@ export function Chat({ username }: ChatProps) {
         />
         <button className="btn join-item">Send</button>
       </form>
-    </>
+    </main>
   );
 }

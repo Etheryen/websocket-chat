@@ -1,8 +1,7 @@
 package chat
 
 import (
-	"encoding/json"
-	"go-ws/utils"
+	"log"
 	"strings"
 	"sync"
 
@@ -10,27 +9,36 @@ import (
 )
 
 type Chat struct {
-	clientSet map[string]struct{}
-	mu        sync.Mutex
-	subs      []chan Message
+	clientSet map[*client]struct{}
+	mu        sync.RWMutex
 }
 
-type Message struct {
-	Id   uint32 `json:"id"`
-	Kind string `json:"kind"`
-	Data any    `json:"data"`
-}
+// TODO: add pong and ping
 
 func New() *Chat {
 	return &Chat{
-		clientSet: make(map[string]struct{}),
-		subs:      make([]chan Message, 0),
+		clientSet: make(map[*client]struct{}),
 	}
 }
 
+func (c *Chat) GetActiveUsers() []string {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	usernames := make([]string, 0, len(c.clientSet))
+	for cl := range c.clientSet {
+		usernames = append(usernames, cl.username)
+	}
+
+	return usernames
+}
+
 func (c *Chat) IsUsernameTaken(username string) bool {
-	for taken := range c.clientSet {
-		if strings.EqualFold(taken, username) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	for cl := range c.clientSet {
+		if strings.EqualFold(cl.username, username) {
 			return true
 		}
 	}
@@ -39,86 +47,89 @@ func (c *Chat) IsUsernameTaken(username string) bool {
 }
 
 func (c *Chat) Join(conn *ws.Conn, username string) {
-	toSendChan := c.subscribe(username)
-	c.broadcast(Message{Id: utils.GetId(), Kind: "users", Data: c.getUserIds()})
+	cl := c.subscribe(username)
+	log.Println(username, "joined")
+	log.Println("Users:", len(c.clientSet))
 
+	c.broadcast(newMessage("users", c.GetActiveUsers()))
+
+	// TODO: maybe use context cancel instead
+	var wg sync.WaitGroup
 	exitChan := make(chan struct{})
 
+	wg.Add(1)
 	go func() {
-		defer func() { exitChan <- struct{}{} }()
-		for msg := range toSendChan {
-			if err := msg.send(conn); err != nil {
-				break
+		defer wg.Done()
+		for {
+			select {
+			case msg, ok := <-cl.toSend:
+				if !ok {
+					return
+				}
+				if err := msg.send(conn); err != nil {
+					return
+				}
+			case <-exitChan:
+				return
 			}
 		}
 	}()
 
+	wg.Add(1)
+	// TODO: somehow abort this one also when sends exists
 	go func() {
-		defer func() { exitChan <- struct{}{} }()
+		defer wg.Done()
 		for {
 			_, bytes, err := conn.ReadMessage()
 			if err != nil {
-				break
+				close(exitChan)
+				return
 			}
-			data := map[string]any{
-				"author":  username,
-				"content": string(bytes),
+			data := textMessageData{
+				Author:  username,
+				Content: string(bytes),
 			}
-			c.broadcast(Message{Id: utils.GetId(), Kind: "text", Data: data})
+			log.Printf("msg: %#v", data)
+			c.broadcast(newMessage("text", data))
 		}
 	}()
 
-	<-exitChan
+	// Wait for both reads and writes to be closed
+	wg.Wait()
 
-	c.removeClient(username)
-	c.broadcast(Message{Id: utils.GetId(), Kind: "users", Data: c.getUserIds()})
+	c.removeClient(cl)
+	log.Println(username, "disconnected")
+	c.broadcast(newMessage("users", c.GetActiveUsers()))
+
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	log.Println("Users:", len(c.clientSet))
 }
 
-func (m *Message) send(conn *ws.Conn) error {
-	wsMsg, err := json.Marshal(m)
-	if err != nil {
-		return err
-	}
-
-	if err = conn.WriteMessage(ws.TextMessage, wsMsg); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (c *Chat) removeClient(username string) {
+func (c *Chat) removeClient(cl *client) {
 	c.mu.Lock()
-	delete(c.clientSet, username)
-	c.mu.Unlock()
+	defer c.mu.Unlock()
+
+	close(cl.toSend)
+	delete(c.clientSet, cl)
 }
 
-func (c *Chat) subscribe(username string) chan Message {
-	ch := make(chan Message)
+func (c *Chat) subscribe(username string) *client {
+	cl := newClient(username)
 
 	c.mu.Lock()
-	c.subs = append(c.subs, ch)
-	c.clientSet[username] = struct{}{}
-	c.mu.Unlock()
+	defer c.mu.Unlock()
 
-	return ch
+	c.clientSet[cl] = struct{}{}
+	return cl
 }
 
-func (c *Chat) broadcast(msg Message) {
-	c.mu.Lock()
-	for _, sub := range c.subs {
-		go func() { sub <- msg }()
-	}
-	c.mu.Unlock()
-}
+func (c *Chat) broadcast(msg *message) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 
-func (c *Chat) getUserIds() []string {
-	c.mu.Lock()
-	usernames := make([]string, 0, len(c.clientSet))
-	for username := range c.clientSet {
-		usernames = append(usernames, username)
+	for cl := range c.clientSet {
+		go func() { cl.toSend <- msg }()
 	}
-	c.mu.Unlock()
-
-	return usernames
 }

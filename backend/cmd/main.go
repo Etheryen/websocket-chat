@@ -1,10 +1,9 @@
 package main
 
 import (
-	"fmt"
 	"go-ws/chat"
 	"go-ws/handlers"
-	"go-ws/server"
+	"go-ws/router"
 	"log"
 	"net/http"
 
@@ -18,14 +17,15 @@ var upgrader = &ws.Upgrader{
 }
 
 func main() {
-	s := server.New(chat.New(), upgrader)
+	r := router.New(chat.New(), upgrader)
 
-	s.Use(handlers.CorsMiddleware)
+	r.Use(handlers.CorsMiddleware)
+	r.Use(handlers.Logging)
 
-	s.Get("/api/users", handlers.GetUsers(s.Chat))
-	s.Post("/api/username", handlers.PostUsername(s.Chat))
-	s.Get("/api/ws", handlers.WsEndpoint(s.Chat, s.Upgrader))
+	r.Get("/api/users", handlers.GetUsers(r.Chat))
+	r.Post("/api/username", handlers.PostUsername(r.Chat))
+	r.Get("/api/ws", handlers.WsEndpoint(r.Chat, r.Upgrader))
 
-	fmt.Println("Listening at port :8080")
-	log.Fatal(s.Listen(":8080"))
+	log.Println("Listening at port :8080")
+	log.Fatal(r.Listen(":8080"))
 }

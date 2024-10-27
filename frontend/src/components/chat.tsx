@@ -3,7 +3,15 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import useWebSocket, { ReadyState } from "react-use-websocket";
 import { getWsUrl } from "~/api/url";
-import { Message, TextMessage } from "~/types/types";
+
+type Message =
+  | { kind: "text"; data: TextMessage }
+  | { kind: "users"; data: string[] };
+
+type TextMessage = {
+  author: string;
+  content: string;
+};
 
 interface ChatProps {
   username: string;

@@ -16,6 +16,7 @@ export default function UsernameForm() {
 
   const handleSubmit = async (ev: FormEvent) => {
     ev.preventDefault();
+
     setError("");
     setIsSubmitting(true);
 

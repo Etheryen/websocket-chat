@@ -14,12 +14,12 @@ type message struct {
 	Data any    `json:"data"`
 }
 
-type usersMessageData = []string
-
 type textMessageData struct {
 	Author  string `json:"author"`
 	Content string `json:"content"`
 }
+
+type usersMessageData = []string
 
 func newMessage(kind string, data any) *message {
 	switch kind {

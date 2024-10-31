@@ -1,33 +1,39 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import useWebSocket, { ReadyState } from "react-use-websocket";
 import { getWsUrl } from "~/api/url";
-
-type Message =
-  | { kind: "text"; data: TextMessage }
-  | { kind: "users"; data: string[] };
-
-type TextMessage = {
-  author: string;
-  content: string;
-};
+import { Message, TextMessage } from "~/types";
 
 interface ChatProps {
   username: string;
+  history: TextMessage[];
 }
 
-export function Chat({ username }: ChatProps) {
+// TODO: maybe make that a flag or env or sth
+const MAX_CHAT_HISTORY = 6;
+
+export function Chat({ username, history }: ChatProps) {
   const [users, setUsers] = useState<string[]>([]);
-  const [messages, setMessages] = useState<TextMessage[]>([]);
+  const [messages, setMessages] = useState<TextMessage[]>(history);
   const [message, setMessage] = useState("");
+
+  const handleNewMessage = (newMsg: TextMessage) => {
+    const messagesCopy = [...messages];
+
+    if (messagesCopy.length >= MAX_CHAT_HISTORY) messagesCopy.shift();
+    messagesCopy.push(newMsg);
+
+    setMessages(messagesCopy);
+  };
 
   const onMessage = (ev: MessageEvent) => {
     const msg = JSON.parse(ev.data) as Message;
 
     switch (msg.kind) {
       case "text":
-        setMessages((messages) => [...messages, msg.data]);
+        handleNewMessage(msg.data);
         break;
       case "users":
         setUsers(msg.data);
@@ -71,7 +77,9 @@ export function Chat({ username }: ChatProps) {
       {/* In a hidden part of your component or JSX */}
       <div className="chat chat-start chat-end" style={{ display: "none" }} />
       <div className="space-y-4 text-center">
-        <h1 className="text-4xl font-bold">Welcome to chat</h1>
+        <h1 className="text-4xl font-bold">
+          <Link href={"/"}>Welcome to chat</Link>
+        </h1>
         <h2 className="text-xl">Status: {connectionStatus}</h2>
         <h2 className="text-xl">Your username: {username}</h2>
         <h2 className="text-lg">Active users:</h2>

@@ -40,6 +40,23 @@ func newMessage(kind string, data any) *message {
 	return &message{Id: utils.GetId(), Kind: kind, Data: data}
 }
 
+func (c *Chat) GetHistory() []*textMessageData {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	return c.history
+}
+
+func (c *Chat) appendToHistory(msg *textMessageData) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if len(c.history) >= maxHistoryLength {
+		c.history = c.history[len(c.history)-maxHistoryLength+1:]
+	}
+	c.history = append(c.history, msg)
+}
+
 func (m *message) send(conn *ws.Conn) error {
 	wsMsg, err := json.Marshal(m)
 	if err != nil {

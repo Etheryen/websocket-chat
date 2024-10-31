@@ -1,3 +1,4 @@
+import { TextMessage } from "~/types";
 import { getApiUrl } from "./url";
 
 const fetchApi = (route: string, opts?: RequestInit) =>
@@ -5,6 +6,10 @@ const fetchApi = (route: string, opts?: RequestInit) =>
 
 export async function getUsers(): Promise<string[]> {
   return await (await fetchApi("/api/users")).json();
+}
+
+export async function getHistory(): Promise<TextMessage[]> {
+  return await (await fetchApi("/api/history")).json();
 }
 
 export async function checkUsername(username: string) {

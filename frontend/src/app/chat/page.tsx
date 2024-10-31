@@ -1,23 +1,48 @@
-import { SearchParams } from "next/dist/server/request/search-params";
-import { redirect } from "next/navigation";
-import { checkUsername } from "~/api/requests";
-import { Chat } from "~/components/chat";
+"use client";
 
-interface ChatPageProps {
-  searchParams: Promise<SearchParams>;
+import { useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
+import { Suspense } from "react";
+import { checkUsername, getHistory } from "~/api/requests";
+import { Chat } from "~/components/chat";
+import { usePromiseFn } from "~/hooks/usePromiseFn";
+
+export default function ChatPage() {
+  return (
+    <Suspense>
+      <ActualChatPage />
+    </Suspense>
+  );
 }
 
-export default async function ChatPage({ searchParams }: ChatPageProps) {
-  const username = (await searchParams)?.username;
-  if (!username || typeof username != "string") {
-    redirect("/");
+function ActualChatPage() {
+  const r = useRouter();
+
+  const username = useSearchParams().get("username");
+
+  const {
+    data: availability,
+    loading: loadingUsername,
+    error: errorUsername,
+  } = usePromiseFn(() => checkUsername(username!), !!username);
+
+  const {
+    data: history,
+    loading: loadingHistory,
+    error: errorHistory,
+  } = usePromiseFn(getHistory, !!username);
+
+  if (!username) {
+    r.push("/");
+    return null;
   }
 
-  const availability = await checkUsername(username);
-  console.log({ username, availability });
-  if (!availability.available) {
-    redirect("/");
+  if (loadingUsername || loadingHistory) return null;
+
+  if (errorUsername || errorHistory || !availability.available) {
+    r.push("/");
+    return null;
   }
 
-  return <Chat username={username} />;
+  return <Chat username={username} history={history} />;
 }

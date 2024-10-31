@@ -23,6 +23,7 @@ func main() {
 	r.Use(handlers.Logging)
 
 	r.Get("/api/users", handlers.GetUsers(r.Chat))
+	r.Get("/api/history", handlers.GetHistory(r.Chat))
 	r.Post("/api/username", handlers.PostUsername(r.Chat))
 	r.Get("/api/ws", handlers.WsEndpoint(r.Chat, r.Upgrader))
 

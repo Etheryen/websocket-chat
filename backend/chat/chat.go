@@ -2,14 +2,16 @@ package chat
 
 import (
 	"log"
-	"strings"
 	"sync"
 
 	ws "github.com/gorilla/websocket"
 )
 
+const maxHistoryLength = 6
+
 type Chat struct {
 	clientSet map[*client]struct{}
+	history   []*textMessageData
 	mu        sync.RWMutex
 }
 
@@ -18,32 +20,8 @@ type Chat struct {
 func New() *Chat {
 	return &Chat{
 		clientSet: make(map[*client]struct{}),
+		history:   make([]*textMessageData, 0, maxHistoryLength),
 	}
-}
-
-func (c *Chat) GetActiveUsers() []string {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-
-	usernames := make([]string, 0, len(c.clientSet))
-	for cl := range c.clientSet {
-		usernames = append(usernames, cl.username)
-	}
-
-	return usernames
-}
-
-func (c *Chat) IsUsernameTaken(username string) bool {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-
-	for cl := range c.clientSet {
-		if strings.EqualFold(cl.username, username) {
-			return true
-		}
-	}
-
-	return false
 }
 
 func (c *Chat) Join(conn *ws.Conn, username string) {
@@ -90,6 +68,7 @@ func (c *Chat) Join(conn *ws.Conn, username string) {
 				Content: string(bytes),
 			}
 			log.Printf("msg: %#v", data)
+			c.appendToHistory(&data)
 			c.broadcast(newMessage("text", data))
 		}
 	}()

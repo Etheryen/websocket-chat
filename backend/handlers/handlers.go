@@ -27,6 +27,23 @@ func GetUsers(c *chat.Chat) http.HandlerFunc {
 	}
 }
 
+func GetHistory(c *chat.Chat) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		history := c.GetHistory()
+		historyJson, err := json.Marshal(history)
+		if err != nil {
+			err := "Couldn't encode history"
+			http.Error(w, err, http.StatusInternalServerError)
+			return
+		}
+
+		if _, err = w.Write(historyJson); err != nil {
+			err := "Couldn't write response"
+			http.Error(w, err, http.StatusInternalServerError)
+		}
+	}
+}
+
 func PostUsername(c *chat.Chat) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()

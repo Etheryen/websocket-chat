@@ -20,26 +20,25 @@ function ActualChatPage() {
 
   const username = useSearchParams().get("username");
 
-  const {
-    data: availability,
-    loading: loadingUsername,
-    error: errorUsername,
-  } = usePromiseFn(() => checkUsername(username!), !!username);
+  const request = () => Promise.all([checkUsername(username!), getHistory()]);
 
-  const {
-    data: history,
-    loading: loadingHistory,
-    error: errorHistory,
-  } = usePromiseFn(getHistory, !!username);
+  const { data, loading, error } = usePromiseFn(request, !!username);
 
   if (!username) {
     r.push("/");
     return null;
   }
 
-  if (loadingUsername || loadingHistory) return null;
+  if (loading) return null;
 
-  if (errorUsername || errorHistory || !availability.available) {
+  if (error) {
+    r.push("/");
+    return null;
+  }
+
+  const [availability, history] = data;
+
+  if (!availability.available) {
     r.push("/");
     return null;
   }

@@ -112,9 +112,9 @@ export function Chat({ username, history }: ChatProps) {
           required
           onChange={(ev) => setMessage(ev.target.value)}
           value={message}
-          className="input join-item input-bordered"
+          className="input input-sm join-item input-bordered sm:input-md"
         />
-        <button className="btn join-item">Send</button>
+        <button className="btn join-item btn-sm sm:btn-md">Send</button>
       </form>
     </main>
   );

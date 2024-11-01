@@ -4,9 +4,9 @@ import { Users } from "~/components/users";
 
 export default async function Home() {
   return (
-    <main className="p-4">
+    <main className="p-8">
       <div className="flex flex-col items-center space-y-4">
-        <h1 className="text-4xl font-bold">
+        <h1 className="text-center text-4xl font-bold">
           <Link href={"/"}>Welcome to chat</Link>
         </h1>
         <Users />

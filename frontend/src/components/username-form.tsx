@@ -33,7 +33,10 @@ export default function UsernameForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="form-control mx-auto">
+    <form
+      onSubmit={handleSubmit}
+      className="form-control flex flex-col justify-center"
+    >
       <div className="join">
         <input
           type="text"
@@ -46,9 +49,12 @@ export default function UsernameForm() {
           disabled={isSubmitting}
           onChange={(ev) => setUsername(ev.target.value)}
           value={username}
-          className="input join-item input-bordered"
+          className="input input-sm join-item input-bordered sm:input-md"
         />
-        <button disabled={isSubmitting} className="btn join-item">
+        <button
+          disabled={isSubmitting}
+          className="btn join-item btn-sm sm:btn-md"
+        >
           Submit
         </button>
       </div>

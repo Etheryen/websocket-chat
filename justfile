@@ -12,3 +12,9 @@ dev:
 
 deploy:
 	docker compose up --build
+
+background:
+	docker compose up --build -d
+
+redeploy:
+	git pull && docker container stop websocket-frontend-1 websocket-backend-1 && just background

@@ -73,11 +73,29 @@ func PostUsername(c *chat.Chat) http.HandlerFunc {
 	}
 }
 
+const (
+	minUsernameLength = 3
+	maxUsernameLength = 3
+)
+
 func WsEndpoint(c *chat.Chat, upgrader *ws.Upgrader) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		username := r.URL.Query().Get("username")
+
 		if strings.TrimSpace(username) == "" {
 			err := "No userame provided in query param"
+			http.Error(w, err, http.StatusBadRequest)
+			return
+		}
+
+		if len(strings.TrimSpace(username)) < minUsernameLength {
+			err := "Username too short"
+			http.Error(w, err, http.StatusBadRequest)
+			return
+		}
+
+		if len(strings.TrimSpace(username)) > maxUsernameLength {
+			err := "Username too long"
 			http.Error(w, err, http.StatusBadRequest)
 			return
 		}

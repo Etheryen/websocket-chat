@@ -5,6 +5,10 @@ import { useRouter } from "next/navigation";
 import { Suspense } from "react";
 import { checkUsername, getHistory } from "~/api/requests";
 import { Chat } from "~/components/chat";
+import {
+  MAX_USERNAME_LENGTH,
+  MIN_USERNAME_LENGTH,
+} from "~/components/username-form";
 import { usePromiseFn } from "~/hooks/usePromiseFn";
 
 export default function ChatPage() {
@@ -24,7 +28,11 @@ function ActualChatPage() {
 
   const { data, loading, error } = usePromiseFn(request, !!username);
 
-  if (!username) {
+  if (
+    !username ||
+    username.length < MIN_USERNAME_LENGTH ||
+    username.length > MAX_USERNAME_LENGTH
+  ) {
     r.push("/");
     return null;
   }

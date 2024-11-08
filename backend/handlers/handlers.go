@@ -75,7 +75,7 @@ func PostUsername(c *chat.Chat) http.HandlerFunc {
 
 const (
 	minUsernameLength = 3
-	maxUsernameLength = 3
+	maxUsernameLength = 25
 )
 
 func WsEndpoint(c *chat.Chat, upgrader *ws.Upgrader) http.HandlerFunc {

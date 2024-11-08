@@ -17,4 +17,4 @@ background:
 	docker compose up --build -d
 
 redeploy:
-	git pull && docker container stop websocket-frontend-1 websocket-backend-1 && just background
+	git pull && docker container stop websocket-chat-frontend-1 websocket-chat-backend-1 && just background

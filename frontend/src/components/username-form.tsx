@@ -4,7 +4,9 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useRef, useState } from "react";
 import { checkUsername } from "~/api/requests";
 
-// TODO: use server actions
+const MIN_USERNAME_LENGTH = 3;
+const MAX_USERNAME_LENGTH = 25;
+
 export default function UsernameForm() {
   const r = useRouter();
 
@@ -16,20 +18,26 @@ export default function UsernameForm() {
 
   const handleSubmit = async (ev: FormEvent) => {
     ev.preventDefault();
+    if (username.trim() == "") return;
+
+    if (username.length < MIN_USERNAME_LENGTH) {
+      setError("Min length: " + MIN_USERNAME_LENGTH);
+      return;
+    }
 
     setError("");
     setIsSubmitting(true);
 
-    const resp = await checkUsername(username);
+    const resp = await checkUsername(username.trim());
     if (resp.available) {
-      r.push(`/chat?username=${username}`);
+      r.push(`/chat?username=${username.trim()}`);
       return;
     }
 
     setIsSubmitting(false);
     setError(resp.error);
-    // TODO: make sure it actually focuses
-    inputRef.current?.focus();
+    // TODO: make sure it actually focuses / do something other than setTimeout fix
+    setTimeout(() => inputRef.current?.focus(), 1);
   };
 
   return (
@@ -42,9 +50,7 @@ export default function UsernameForm() {
           type="text"
           placeholder="Username..."
           autoComplete="off"
-          minLength={3}
-          maxLength={25}
-          required
+          maxLength={MAX_USERNAME_LENGTH}
           ref={inputRef}
           disabled={isSubmitting}
           onChange={(ev) => setUsername(ev.target.value)}

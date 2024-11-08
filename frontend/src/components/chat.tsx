@@ -58,9 +58,10 @@ export function Chat({ username, history }: ChatProps) {
 
   const handleSend = (ev: FormEvent) => {
     ev.preventDefault();
+    if (message.trim() == "") return;
     if (readyState != ReadyState.OPEN) return;
 
-    sendMessage(message);
+    sendMessage(message.trim());
     setMessage("");
   };
 
@@ -96,7 +97,9 @@ export function Chat({ username, history }: ChatProps) {
             className={`chat chat-${username === msg.author ? "end" : "start"}`}
           >
             <div className="chat-header">{msg.author}</div>
-            <div className="chat-bubble">{msg.content}</div>
+            <div className="chat-bubble">
+              <div className="truncate text-wrap">{msg.content}</div>
+            </div>
           </div>
         ))}
       </div>
@@ -108,8 +111,7 @@ export function Chat({ username, history }: ChatProps) {
           type="text"
           placeholder="Your message..."
           autoComplete="off"
-          maxLength={25}
-          required
+          maxLength={100}
           onChange={(ev) => setMessage(ev.target.value)}
           value={message}
           className="input input-sm join-item input-bordered sm:input-md"

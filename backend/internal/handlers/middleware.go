@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"go-ws/utils"
+	"go-ws/internal/utils"
 	"log"
 	"net"
 	"net/http"

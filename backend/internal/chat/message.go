@@ -3,7 +3,7 @@ package chat
 import (
 	"encoding/json"
 	"fmt"
-	"go-ws/utils"
+	"go-ws/internal/utils"
 
 	ws "github.com/gorilla/websocket"
 )

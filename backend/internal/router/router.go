@@ -1,7 +1,7 @@
 package router
 
 import (
-	"go-ws/chat"
+	"go-ws/internal/chat"
 	"net/http"
 
 	ws "github.com/gorilla/websocket"

@@ -1,9 +1,9 @@
 package main
 
 import (
-	"go-ws/chat"
-	"go-ws/handlers"
-	"go-ws/router"
+	"go-ws/internal/chat"
+	"go-ws/internal/handlers"
+	"go-ws/internal/router"
 	"log"
 	"net/http"
 

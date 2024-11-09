@@ -2,10 +2,9 @@ package handlers
 
 import (
 	"encoding/json"
-	"go-ws/chat"
-	"log"
+	"go-ws/internal/chat"
+	"go-ws/internal/validation"
 	"net/http"
-	"strings"
 
 	ws "github.com/gorilla/websocket"
 )
@@ -13,6 +12,7 @@ import (
 func GetUsers(c *chat.Chat) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		users := c.GetActiveUsers()
+
 		usersJson, err := json.Marshal(users)
 		if err != nil {
 			err := "Couldn't encode users"
@@ -30,6 +30,7 @@ func GetUsers(c *chat.Chat) http.HandlerFunc {
 func GetHistory(c *chat.Chat) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		history := c.GetHistory()
+
 		historyJson, err := json.Marshal(history)
 		if err != nil {
 			err := "Couldn't encode history"
@@ -57,15 +58,9 @@ func PostUsername(c *chat.Chat) http.HandlerFunc {
 		}
 
 		username := body["username"]
-		if username == "" {
-			err := "No non-empty username provided in post body"
-			http.Error(w, err, http.StatusBadRequest)
-			return
-		}
 
-		if c.IsUsernameTaken(username) {
-			err := "Username is taken"
-			http.Error(w, err, http.StatusBadRequest)
+		if err := validation.ValidateUsername(c, username); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
@@ -73,37 +68,12 @@ func PostUsername(c *chat.Chat) http.HandlerFunc {
 	}
 }
 
-const (
-	minUsernameLength = 3
-	maxUsernameLength = 25
-)
-
 func WsEndpoint(c *chat.Chat, upgrader *ws.Upgrader) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		username := r.URL.Query().Get("username")
 
-		if strings.TrimSpace(username) == "" {
-			err := "No userame provided in query param"
-			http.Error(w, err, http.StatusBadRequest)
-			return
-		}
-
-		if len(strings.TrimSpace(username)) < minUsernameLength {
-			err := "Username too short"
-			http.Error(w, err, http.StatusBadRequest)
-			return
-		}
-
-		if len(strings.TrimSpace(username)) > maxUsernameLength {
-			err := "Username too long"
-			http.Error(w, err, http.StatusBadRequest)
-			return
-		}
-
-		if c.IsUsernameTaken(username) {
-			log.Println("User exists:", username)
-			err := "Username is taken"
-			http.Error(w, err, http.StatusBadRequest)
+		if err := validation.ValidateUsername(c, username); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 

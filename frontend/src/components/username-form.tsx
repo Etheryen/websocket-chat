@@ -55,6 +55,7 @@ export default function UsernameForm() {
       <div className="join">
         <input
           type="text"
+          name="username"
           placeholder="Username..."
           autoComplete="off"
           maxLength={MAX_USERNAME_LENGTH}

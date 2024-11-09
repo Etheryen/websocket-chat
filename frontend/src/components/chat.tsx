@@ -110,6 +110,7 @@ export function Chat({ username, history }: ChatProps) {
       >
         <input
           type="text"
+          name="message"
           placeholder="Your message..."
           autoComplete="off"
           maxLength={100}

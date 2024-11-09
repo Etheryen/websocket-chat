@@ -48,12 +48,13 @@ export function Chat({ username, history }: ChatProps) {
     };
   }, []);
 
-  const url = `${getWsUrl()}/api/ws?username=${username}`;
+  const queryString = new URLSearchParams({ username }).toString();
+
+  const url = `${getWsUrl()}/api/ws?${queryString}`;
   const { readyState, sendMessage } = useWebSocket(url, {
     onMessage,
     retryOnError: true,
     shouldReconnect: () => didUnmount.current === false,
-    queryParams: { username },
   });
 
   const handleSend = (ev: FormEvent) => {

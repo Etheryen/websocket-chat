@@ -13,7 +13,11 @@ const (
 
 func ValidateUsername(c *chat.Chat, username string) error {
 	if strings.TrimSpace(username) == "" {
-		return errors.New("No userame provided in post body")
+		return errors.New("No userame provided")
+	}
+
+	if strings.ContainsAny(username, " \t") {
+		return errors.New("Whitespace in username is disallowed")
 	}
 
 	if len(strings.TrimSpace(username)) < minUsernameLength {

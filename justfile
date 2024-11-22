@@ -1,6 +1,9 @@
 list:
 	@just --list
 
+
+# --- DEV ---
+
 frontend-dev:
 	@cd frontend && pnpm dev
 
@@ -10,11 +13,19 @@ backend-dev:
 dev:
 	@concurrently -k -p "[{name}]" -c "magenta.bold,blue.bold" -n "frontend,backend" "just frontend-dev" "just backend-dev"
 
-deploy:
-	docker compose up --build
 
-background:
-	docker compose up --build -d
+# --- PROD ---
+
+build:
+	docker compose build
+
+run:
+	docker compose up
+
+deploy: build run
+
+bg-run:
+	docker compose up -d
 
 redeploy:
-	git pull && docker container stop websocket-chat-frontend-1 websocket-chat-backend-1 && just background
+	git pull && just build && docker container stop websocket-chat-frontend-1 websocket-chat-backend-1 && just bg-run
